@@ -1,18 +1,18 @@
 package view;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import javax.swing.*;
-import model.RaceHistory;
+import java.util.Collections;
 import model.RaceHorse;
 import model.User;
-import utils.HorseAssets;
+import model.RaceHistory;
 import utils.UserManager;
+import utils.HorseAssets;
 
 public class RacePanel extends JPanel {
     private GameFrame gameFrame;
@@ -495,7 +495,7 @@ public class RacePanel extends JPanel {
         ));
         
         for (int i = 1; i < NUM_COMPETITORS; i++) {
-            int randomSpeed = 40 + (int)(Math.random() * 100);
+            int randomSpeed = 40 + (int)(Math.random() * 40);
             horses.add(new RaceHorse(
                 horseNames[i],
                 "",

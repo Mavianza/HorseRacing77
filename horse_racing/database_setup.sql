@@ -3,21 +3,28 @@ CREATE DATABASE IF NOT EXISTS horse_racing_db
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
+-- Gunakan database yang baru dibuat
 USE horse_racing_db;
 
+-- ====================================================
+-- TABEL 1: USERS
+-- ====================================================
 -- Menyimpan data akun user/player
 CREATE TABLE IF NOT EXISTS users (
     id INT(11) NOT NULL AUTO_INCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    coins INT DEFAULT 500,
     salt VARCHAR(32) NOT NULL,
+    coins INT DEFAULT 500,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     INDEX idx_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ====================================================
+-- TABEL 2: HORSES
+-- ====================================================
 -- Menyimpan data kuda milik setiap user
 CREATE TABLE IF NOT EXISTS horses (
     id INT(11) NOT NULL AUTO_INCREMENT,
@@ -34,6 +41,9 @@ CREATE TABLE IF NOT EXISTS horses (
     INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ====================================================
+-- TABEL 3: RACE_HISTORY
+-- ====================================================
 -- Menyimpan riwayat balapan setiap user
 CREATE TABLE IF NOT EXISTS race_history (
     id INT(11) NOT NULL AUTO_INCREMENT,
