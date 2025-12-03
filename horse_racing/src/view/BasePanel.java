@@ -6,10 +6,6 @@ import java.io.File;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 
-/**
- * BasePanel provides a common background and layout configuration for all main
- * panels in the game.
- */
 public abstract class BasePanel extends JPanel {
 
     protected final GameFrame gameFrame;
@@ -41,8 +37,7 @@ public abstract class BasePanel extends JPanel {
             Graphics2D g2d = (Graphics2D) g;
             g2d.setRenderingHint(
                     RenderingHints.KEY_INTERPOLATION,
-                    RenderingHints.VALUE_INTERPOLATION_BILINEAR
-            );
+                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
             g2d.drawImage(backgroundImage, 0, 0, getWidth(), getHeight(), this);
         } else {
             // Fallback background color if image is missing
