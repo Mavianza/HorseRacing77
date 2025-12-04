@@ -53,7 +53,7 @@ public class RacePanel extends JPanel {
     private Timer animationTimer;
     private int currentFrame = 0;
     
-    private String[] horseNames = {"Thunder", "Lightning", "Storm", "Blaze", "Shadow"};
+    private String[] horseNames = {"Cuki", "Suki", "Oming", "Mujaer", "Jaki"};
     
     public RacePanel(GameFrame gameFrame, UserManager userManager) {
         this.gameFrame = gameFrame;

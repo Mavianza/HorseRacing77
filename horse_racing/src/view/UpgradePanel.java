@@ -18,9 +18,20 @@ public class UpgradePanel extends JPanel implements Displayable {
     private JLabel staminaLabel;
     private JLabel accelerationLabel;
     private JLabel levelLabel;
+    private JButton upgradeSpeedBtn;
+    private JButton upgradeStaminaBtn;
+    private JButton upgradeAccelerationBtn;
+    private JProgressBar speedBar;
+    private JProgressBar staminaBar;
+    private JProgressBar accelerationBar;
     private BufferedImage backgroundImage;
     
-    private static final int UPGRADE_COST = 50;
+    private static final int SPEED_BASE_COST = 70;
+    private static final int SPEED_COST_INCREMENT = 15;
+    private static final int STAMINA_BASE_COST = 60;
+    private static final int STAMINA_COST_INCREMENT = 12;
+    private static final int ACCELERATION_BASE_COST = 55;
+    private static final int ACCELERATION_COST_INCREMENT = 10;
     private static final int UPGRADE_AMOUNT = 10;
     private static final int MAX_STAT = 200;
     
@@ -106,7 +117,7 @@ public class UpgradePanel extends JPanel implements Displayable {
         gbc.gridy = 1;
         centerPanel.add(levelLabel, gbc);
 
-        JLabel infoLabel = new JLabel("💎 Upgrade Cost: " + UPGRADE_COST + " coins | Max: " + MAX_STAT);
+        JLabel infoLabel = new JLabel("Costs differ per stat and scale up each upgrade (Max: " + MAX_STAT + ")");
         infoLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 15));
         infoLabel.setForeground(new Color(255, 255, 150));
         gbc.gridy = 2;
@@ -120,14 +131,14 @@ public class UpgradePanel extends JPanel implements Displayable {
         centerPanel.add(speedLabel, gbc);
         
         gbc.gridx = 1;
-        JProgressBar speedBar = new JProgressBar(0, 200);
+        speedBar = new JProgressBar(0, 200);
         speedBar.setPreferredSize(new Dimension(200, 25));
         speedBar.setStringPainted(true);
         speedBar.setName("speedBar");
         centerPanel.add(speedBar, gbc);
         
         gbc.gridx = 2;
-        JButton upgradeSpeedBtn = createUpgradeButton("Upgrade Speed");
+        upgradeSpeedBtn = createUpgradeButton("Upgrade Speed");
         upgradeSpeedBtn.addActionListener(e -> upgradeSpeed());
         centerPanel.add(upgradeSpeedBtn, gbc);
 
@@ -139,14 +150,14 @@ public class UpgradePanel extends JPanel implements Displayable {
         centerPanel.add(staminaLabel, gbc);
         
         gbc.gridx = 1;
-        JProgressBar staminaBar = new JProgressBar(0, 200);
+        staminaBar = new JProgressBar(0, 200);
         staminaBar.setPreferredSize(new Dimension(200, 25));
         staminaBar.setStringPainted(true);
         staminaBar.setName("staminaBar");
         centerPanel.add(staminaBar, gbc);
         
         gbc.gridx = 2;
-        JButton upgradeStaminaBtn = createUpgradeButton("Upgrade Stamina");
+        upgradeStaminaBtn = createUpgradeButton("Upgrade Stamina");
         upgradeStaminaBtn.addActionListener(e -> upgradeStamina());
         centerPanel.add(upgradeStaminaBtn, gbc);
 
@@ -158,14 +169,14 @@ public class UpgradePanel extends JPanel implements Displayable {
         centerPanel.add(accelerationLabel, gbc);
         
         gbc.gridx = 1;
-        JProgressBar accelerationBar = new JProgressBar(0, 200);
+        accelerationBar = new JProgressBar(0, 200);
         accelerationBar.setPreferredSize(new Dimension(200, 25));
         accelerationBar.setStringPainted(true);
         accelerationBar.setName("accelerationBar");
         centerPanel.add(accelerationBar, gbc);
         
         gbc.gridx = 2;
-        JButton upgradeAccelerationBtn = createUpgradeButton("Upgrade Acceleration");
+        upgradeAccelerationBtn = createUpgradeButton("Upgrade Acceleration");
         upgradeAccelerationBtn.addActionListener(e -> upgradeAcceleration());
         centerPanel.add(upgradeAccelerationBtn, gbc);
         
@@ -228,33 +239,52 @@ public class UpgradePanel extends JPanel implements Displayable {
         return button;
     }
     
+    private int calculateCost(int baseCost, int increment, int currentStat) {
+        int upgradesDone = Math.max(0, (currentStat - 50) / UPGRADE_AMOUNT);
+        return baseCost + (upgradesDone * increment);
+    }
+    
+    private int calculateSpeedCost(int currentStat) {
+        return calculateCost(SPEED_BASE_COST, SPEED_COST_INCREMENT, currentStat);
+    }
+    
+    private int calculateStaminaCost(int currentStat) {
+        return calculateCost(STAMINA_BASE_COST, STAMINA_COST_INCREMENT, currentStat);
+    }
+    
+    private int calculateAccelerationCost(int currentStat) {
+        return calculateCost(ACCELERATION_BASE_COST, ACCELERATION_COST_INCREMENT, currentStat);
+    }
+    
+    private void updateUpgradeButton(JButton button, String baseText, int currentStat, int cost) {
+        if (currentStat >= MAX_STAT) {
+            button.setText("MAXED");
+            button.setEnabled(false);
+        } else {
+            button.setText(baseText + "  $" + cost + "");
+            button.setEnabled(true);
+        }
+    }
+    
     public void updateStats() {
         User currentUser = gameFrame.getCurrentUser();
         if (currentUser == null || currentUser.getHorse() == null) return;
         
         Horse horse = currentUser.getHorse();
         
-        coinsLabel.setText("💰 Available Coins: " + currentUser.getCoins());
-        levelLabel.setText("🐎 " + horse.getName() + " - Level " + horse.getLevel());
+        coinsLabel.setText("Coins: 💰 " + currentUser.getCoins());
+        levelLabel.setText("Horse: 🐎 " + horse.getName() + " - Level " + horse.getLevel());
         speedLabel.setText("Speed: " + horse.getSpeed());
         staminaLabel.setText("Stamina: " + horse.getStamina());
         accelerationLabel.setText("Acceleration: " + horse.getAcceleration());
 
-        Component[] components = ((JPanel)getComponent(1)).getComponents();
-        for (Component comp : components) {
-            if (comp instanceof JProgressBar) {
-                JProgressBar bar = (JProgressBar) comp;
-                if (bar.getName() != null) {
-                    if (bar.getName().equals("speedBar")) {
-                        bar.setValue(horse.getSpeed());
-                    } else if (bar.getName().equals("staminaBar")) {
-                        bar.setValue(horse.getStamina());
-                    } else if (bar.getName().equals("accelerationBar")) {
-                        bar.setValue(horse.getAcceleration());
-                    }
-                }
-            }
-        }
+        speedBar.setValue(horse.getSpeed());
+        staminaBar.setValue(horse.getStamina());
+        accelerationBar.setValue(horse.getAcceleration());
+
+        updateUpgradeButton(upgradeSpeedBtn, "Upgrade Cost :", horse.getSpeed(), calculateSpeedCost(horse.getSpeed()));
+        updateUpgradeButton(upgradeStaminaBtn, "Upgrade Cost :", horse.getStamina(), calculateStaminaCost(horse.getStamina()));
+        updateUpgradeButton(upgradeAccelerationBtn, "Upgrade Cost :", horse.getAcceleration(), calculateAccelerationCost(horse.getAcceleration()));
     }
     
     private void upgradeSpeed() {
@@ -268,22 +298,21 @@ public class UpgradePanel extends JPanel implements Displayable {
             return;
         }
         
-        if (currentUser.getCoins() >= UPGRADE_COST) {
-            if (currentUser.spendCoins(UPGRADE_COST)) {
-                int oldLevel = horse.getLevel();
-
-                int newSpeed = Math.min(horse.getSpeed() + UPGRADE_AMOUNT, MAX_STAT);
-                horse.setSpeed(newSpeed);
-                
-                checkLevelUp(horse, oldLevel);
-                userManager.updateUser(currentUser);
-                updateStats();
-                gameFrame.updateMainMenu();
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Not enough coins!", 
+        int cost = calculateSpeedCost(horse.getSpeed());
+        if (!currentUser.spendCoins(cost)) {
+            JOptionPane.showMessageDialog(this, "Not enough coins (" + cost + " needed).", 
                 "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        int oldLevel = horse.getLevel();
+        int newSpeed = Math.min(horse.getSpeed() + UPGRADE_AMOUNT, MAX_STAT);
+        horse.setSpeed(newSpeed);
+        
+        checkLevelUp(horse, oldLevel);
+        userManager.updateUser(currentUser);
+        updateStats();
+        gameFrame.updateMainMenu();
     }
     
     private void upgradeStamina() {
@@ -297,22 +326,21 @@ public class UpgradePanel extends JPanel implements Displayable {
             return;
         }
         
-        if (currentUser.getCoins() >= UPGRADE_COST) {
-            if (currentUser.spendCoins(UPGRADE_COST)) {
-                int oldLevel = horse.getLevel();
-
-                int newStamina = Math.min(horse.getStamina() + UPGRADE_AMOUNT, MAX_STAT);
-                horse.setStamina(newStamina);
-                
-                checkLevelUp(horse, oldLevel);
-                userManager.updateUser(currentUser);
-                updateStats();
-                gameFrame.updateMainMenu();
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Not enough coins!", 
+        int cost = calculateStaminaCost(horse.getStamina());
+        if (!currentUser.spendCoins(cost)) {
+            JOptionPane.showMessageDialog(this, "Not enough coins (" + cost + " needed).", 
                 "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        int oldLevel = horse.getLevel();
+        int newStamina = Math.min(horse.getStamina() + UPGRADE_AMOUNT, MAX_STAT);
+        horse.setStamina(newStamina);
+        
+        checkLevelUp(horse, oldLevel);
+        userManager.updateUser(currentUser);
+        updateStats();
+        gameFrame.updateMainMenu();
     }
     
     private void upgradeAcceleration() {
@@ -326,22 +354,21 @@ public class UpgradePanel extends JPanel implements Displayable {
             return;
         }
         
-        if (currentUser.getCoins() >= UPGRADE_COST) {
-            if (currentUser.spendCoins(UPGRADE_COST)) {
-                int oldLevel = horse.getLevel();
-
-                int newAcceleration = Math.min(horse.getAcceleration() + UPGRADE_AMOUNT, MAX_STAT);
-                horse.setAcceleration(newAcceleration);
-                
-                checkLevelUp(horse, oldLevel);
-                userManager.updateUser(currentUser);
-                updateStats();
-                gameFrame.updateMainMenu();
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Not enough coins!", 
+        int cost = calculateAccelerationCost(horse.getAcceleration());
+        if (!currentUser.spendCoins(cost)) {
+            JOptionPane.showMessageDialog(this, "Not enough coins (" + cost + " needed).", 
                 "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        int oldLevel = horse.getLevel();
+        int newAcceleration = Math.min(horse.getAcceleration() + UPGRADE_AMOUNT, MAX_STAT);
+        horse.setAcceleration(newAcceleration);
+        
+        checkLevelUp(horse, oldLevel);
+        userManager.updateUser(currentUser);
+        updateStats();
+        gameFrame.updateMainMenu();
     }
     
     private void checkLevelUp(Horse horse, int oldLevel) {
@@ -350,11 +377,78 @@ public class UpgradePanel extends JPanel implements Displayable {
         
         if (expectedLevel > horse.getLevel()) {
             horse.levelUp();
-            
-            JOptionPane.showMessageDialog(this, 
-                "🎉 Congratulations! Your horse reached Level " + horse.getLevel() + "!\n" +
-                "Keep upgrading to unlock your horse's full potential!", 
-                "Level Up!", JOptionPane.INFORMATION_MESSAGE);
+            showLevelUpDialog(horse, oldLevel);
         }
+    }
+
+    private void showLevelUpDialog(Horse horse, int oldLevel) {
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Level Up", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setUndecorated(true);
+
+        JPanel content = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, new Color(255, 224, 160),
+                    0, getHeight(), new Color(120, 70, 20)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                g2d.setColor(new Color(40, 20, 10, 160));
+                g2d.setStroke(new BasicStroke(2));
+                g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+            }
+        };
+        content.setBorder(BorderFactory.createEmptyBorder(20, 24, 16, 24));
+
+        JLabel titleLabel = new JLabel("LEVEL UP!", SwingConstants.CENTER);
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
+        titleLabel.setForeground(new Color(70, 40, 5));
+
+        JLabel horseLabel = new JLabel(horse.getName(), SwingConstants.CENTER);
+        horseLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
+        horseLabel.setForeground(new Color(30, 30, 30));
+
+        JLabel levelLabel = new JLabel("Level " + oldLevel + " -> Level " + horse.getLevel(), SwingConstants.CENTER);
+        levelLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+        levelLabel.setForeground(new Color(50, 30, 10));
+
+        JLabel statsLabel = new JLabel(
+            "Speed " + horse.getSpeed() + " | Stamina " + horse.getStamina() + " | Acceleration " + horse.getAcceleration(),
+            SwingConstants.CENTER
+        );
+        statsLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+        statsLabel.setForeground(new Color(60, 40, 20));
+
+        JPanel centerPanel = new JPanel();
+        centerPanel.setOpaque(false);
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.add(titleLabel);
+        centerPanel.add(Box.createVerticalStrut(10));
+        centerPanel.add(horseLabel);
+        centerPanel.add(Box.createVerticalStrut(8));
+        centerPanel.add(levelLabel);
+        centerPanel.add(Box.createVerticalStrut(6));
+        centerPanel.add(statsLabel);
+
+        JButton closeButton = createStyledButton("CONTINUE", new Color(34, 139, 34));
+        closeButton.setPreferredSize(new Dimension(200, 40));
+        closeButton.addActionListener(e -> dialog.dispose());
+
+        JPanel buttonWrapper = new JPanel();
+        buttonWrapper.setOpaque(false);
+        buttonWrapper.add(closeButton);
+
+        content.add(centerPanel, BorderLayout.CENTER);
+        content.add(buttonWrapper, BorderLayout.SOUTH);
+
+        dialog.setContentPane(content);
+        dialog.pack();
+        dialog.setSize(new Dimension(420, 240));
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 }
