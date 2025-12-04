@@ -489,13 +489,17 @@ public class RacePanel extends JPanel {
         
         User currentUser = gameFrame.getCurrentUser();
         
-        horses.add(new RaceHorse(
-            currentUser.getHorse().getName(),
-            "",
-            currentUser.getHorse().calculateRaceSpeed(),
-            true
-        ));
+        // horses.add(new RaceHorse(
+        //     currentUser.getHorse().getName(),
+        //     "",
+        //     currentUser.getHorse().calculateRaceSpeed(),
+        //     true
+        // ));
+
+        // cons rh 2
+        horses.add(new RaceHorse(currentUser.getHorse(), true));
         
+        // cons rh 2
         for (int i = 1; i < NUM_COMPETITORS; i++) {
             int randomSpeed = 40 + (int)(Math.random() * 40);
             horses.add(new RaceHorse(

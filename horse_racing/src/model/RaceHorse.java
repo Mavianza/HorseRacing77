@@ -8,6 +8,7 @@ public class RaceHorse implements Movable {
     private boolean isPlayer;
     private boolean finished;
     
+    // cons rh 1
     public RaceHorse(String name, String color, int speed, boolean isPlayer) {
         this.name = name;
         this.color = color;
@@ -15,6 +16,11 @@ public class RaceHorse implements Movable {
         this.position = 0;
         this.isPlayer = isPlayer;
         this.finished = false;
+    }
+
+    // cons rh 2
+    public RaceHorse(Horse horse, boolean isPlayer){
+        this(horse.getName(), "", horse.calculateRaceSpeed(), isPlayer);
     }
     
     public String getName() {
