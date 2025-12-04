@@ -1,22 +1,24 @@
 package view;
 
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
+import javax.swing.*;
+import model.RaceHistory;
 import model.RaceHorse;
 import model.User;
-import model.RaceHistory;
-import utils.UserManager;
 import utils.HorseAssets;
+import utils.SoundPlayer;
+import utils.UserManager;
 
 public class RacePanel extends JPanel {
     private GameFrame gameFrame;
     private UserManager userManager;
+    private SoundPlayer soundPlayer = new SoundPlayer();
     private static final int NUM_COMPETITORS = 5;
     private static final int LANE_HEIGHT = 110;
     private static final int HORSE_WIDTH = 80;
@@ -521,6 +523,7 @@ public class RacePanel extends JPanel {
         
         initializeRace();
         raceInProgress = true;
+        soundPlayer.playLoop("assets/backsound.wav");
         startButton.setEnabled(false);
         backButton.setEnabled(false);
         finishOrder.clear();
@@ -580,6 +583,7 @@ public class RacePanel extends JPanel {
                 }
                 stopAnimationTimer();
                 raceInProgress = false;
+                soundPlayer.stop();
                 showRaceResults();
                 startButton.setEnabled(true);
                 backButton.setEnabled(true);
