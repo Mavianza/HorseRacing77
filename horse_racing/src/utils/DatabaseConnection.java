@@ -6,7 +6,7 @@ public class DatabaseConnection {
     private static final String DB_URL = "jdbc:mysql://localhost:3306/";
     private static final String DB_NAME = "horse_racing_db";
     private static final String USER = "root";
-    private static final String PASS = "adhiet";
+    private static final String PASS = "";
     
     private static volatile boolean databaseReady = false;
     
@@ -35,15 +35,18 @@ public class DatabaseConnection {
     public static void initialize() {
         try (Connection c = getConnection(); Statement s = c.createStatement()) {
             
-            s.executeUpdate("CREATE TABLE IF NOT EXISTS users (" +
-                    "id INT(11) NOT NULL AUTO_INCREMENT," +
-                    "username VARCHAR(50) NOT NULL UNIQUE," +
-                    "password VARCHAR(255) NOT NULL," +
-                    "coins INT DEFAULT 500," +
-                    "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
-                    "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
-                    "PRIMARY KEY (id)" +
-                    ");");
+            s.executeUpdate(
+            "CREATE TABLE IF NOT EXISTS users (" +
+                "id INT(11) NOT NULL AUTO_INCREMENT," +
+                "username VARCHAR(50) NOT NULL UNIQUE," +
+                "password VARCHAR(255) NOT NULL," +
+                "salt VARCHAR(255) NOT NULL," +       
+                "coins INT DEFAULT 500," +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP," +
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+                "PRIMARY KEY (id)" +
+            ");"
+        );
             
             s.executeUpdate("CREATE TABLE IF NOT EXISTS horses (" +
                     "id INT(11) NOT NULL AUTO_INCREMENT," +
