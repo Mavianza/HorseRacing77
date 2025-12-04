@@ -18,9 +18,6 @@ public abstract class BasePanel extends JPanel {
         loadBackgroundImage();
     }
 
-    /**
-     * Loads the shared background image for all panels.
-     */
     protected void loadBackgroundImage() {
         try {
             backgroundImage = ImageIO.read(new File("assets/background.jpg"));
@@ -46,10 +43,6 @@ public abstract class BasePanel extends JPanel {
         }
     }
 
-    /**
-     * Child panels must implement this to build their UI. Panggil ini dari
-     * constructor subclass setelah field-nya siap.
-     */
     protected abstract void initComponents();
 
     public GameFrame getGameFrame() {
