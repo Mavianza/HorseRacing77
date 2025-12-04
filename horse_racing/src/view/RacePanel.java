@@ -4,9 +4,12 @@ import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import model.RaceHistory;
 import model.RaceHorse;
@@ -19,6 +22,7 @@ public class RacePanel extends JPanel {
     private GameFrame gameFrame;
     private UserManager userManager;
     private SoundPlayer soundPlayer = new SoundPlayer();
+    private BufferedImage trackImage;
     private static final int NUM_COMPETITORS = 5;
     private static final int LANE_HEIGHT = 110;
     private static final int HORSE_WIDTH = 80;
@@ -65,7 +69,14 @@ public class RacePanel extends JPanel {
         
         setLayout(new BorderLayout());
         setBackground(new Color(139, 69, 19));
-        if (useAnimatedGif) {
+        try {
+            trackImage = ImageIO.read(new File("assets/TrackBalapan.png"));
+            System.out.println("Track image loaded successfully.");
+        } catch (IOException e) {
+            System.err.println("Failed to load track image, fallback to manual drawTrack: " + e.getMessage());
+            trackImage = null; // supaya nanti bisa pakai drawTrack() sebagai fallback
+        }
+            if (useAnimatedGif) {
             System.out.println("Initializing pre-rendered frames...");
             boolean success = HorseAssets.preRenderFrames(HORSE_WIDTH, HORSE_HEIGHT);
             if (success) {
@@ -97,7 +108,15 @@ public class RacePanel extends JPanel {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                drawTrack(g);
+
+                if (trackImage != null) {
+                    Graphics2D g2d = (Graphics2D) g;
+                    g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
+                                        RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                    // gambar track sebagai background, di-scale mengikuti ukuran panel
+                    g2d.drawImage(trackImage, 0, 0, getWidth(), getHeight(), null);
+                }
+
                 if (!useAnimatedGif) {
                     drawHorses(g);
                 }
@@ -235,54 +254,6 @@ public class RacePanel extends JPanel {
         }
     }
     
-    private void drawTrack(Graphics g) {
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        
-        int trackHeight = NUM_COMPETITORS * LANE_HEIGHT;
-        int finishX = TRACK_START_X + trackLength;
-        for (int i = 0; i < NUM_COMPETITORS; i++) {
-            int y = TRACK_TOP_MARGIN + i * LANE_HEIGHT;
-            if (i % 2 == 0) {
-                g2d.setColor(new Color(222, 194, 154));
-            } else {
-                g2d.setColor(new Color(200, 170, 130));
-            }
-            g2d.fillRect(TRACK_START_X, y, trackLength + 20, LANE_HEIGHT);
-        }
-        
-        g2d.setColor(Color.WHITE);
-        g2d.setStroke(new BasicStroke(2));
-        for (int i = 0; i <= NUM_COMPETITORS; i++) {
-            int y = TRACK_TOP_MARGIN + i * LANE_HEIGHT;
-            g2d.drawLine(TRACK_START_X, y, finishX + 20, y);
-        }
-        
-        g2d.setColor(new Color(0, 180, 0));
-        g2d.setStroke(new BasicStroke(4));
-        g2d.drawLine(TRACK_START_X, TRACK_TOP_MARGIN, TRACK_START_X, TRACK_TOP_MARGIN + trackHeight);
-        
-        int checkerSize = LANE_HEIGHT / 4;
-        for (int row = 0; row < (trackHeight / checkerSize); row++) {
-            for (int col = 0; col < 2; col++) {
-                if ((row + col) % 2 == 0) {
-                    g2d.setColor(Color.WHITE);
-                } else {
-                    g2d.setColor(Color.BLACK);
-                }
-                g2d.fillRect(finishX + col * checkerSize, TRACK_TOP_MARGIN + row * checkerSize, 
-                            checkerSize, checkerSize);
-            }
-        }
-        
-        g2d.setColor(new Color(80, 50, 20));
-        g2d.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-        for (int i = 0; i < NUM_COMPETITORS; i++) {
-            int laneY = TRACK_TOP_MARGIN + i * LANE_HEIGHT + LANE_HEIGHT / 2 + 5;
-            g2d.drawString("Lane " + (i + 1), 10, laneY);
-        }
-    }
-    
     private String getRankingSuffix(int position) {
         switch (position) {
             case 1: return "1st";
@@ -303,8 +274,10 @@ public class RacePanel extends JPanel {
             RaceHorse horse = horses.get(i);
             int x = TRACK_START_X + horse.getPosition();
             int laneNumber = laneMappings.get(i);
-            int laneY = TRACK_TOP_MARGIN + laneNumber * LANE_HEIGHT;
-            int horseY = laneY + (LANE_HEIGHT - HORSE_HEIGHT) / 2;
+            int laneY = getLaneTop(laneNumber);
+            int laneHeight = getLaneHeight();
+            int horseY = laneY + (laneHeight - HORSE_HEIGHT) / 2;
+
             
             BufferedImage horseImage = HorseAssets.createHorseImage(HORSE_WIDTH, HORSE_HEIGHT);
             g2d.drawImage(horseImage, x, horseY, null);
@@ -363,8 +336,9 @@ public class RacePanel extends JPanel {
             horseLabel.setOpaque(false);
             
             int x = TRACK_START_X + horse.getPosition();
-            int laneY = TRACK_TOP_MARGIN + laneNumber * LANE_HEIGHT;
-            int horseY = laneY + (LANE_HEIGHT - frameHeight) / 2;
+            int laneY = getLaneTop(laneNumber);
+            int laneHeight = getLaneHeight();
+            int horseY = laneY + (laneHeight - frameHeight) / 2;
             horseLabel.setBounds(x, horseY, frameWidth, frameHeight);
             
             horseLabels.add(horseLabel);
@@ -421,8 +395,9 @@ public class RacePanel extends JPanel {
             int laneNumber = laneMappings.get(i);
             
             int x = TRACK_START_X + horse.getPosition();
-            int laneY = TRACK_TOP_MARGIN + laneNumber * LANE_HEIGHT;
-            int horseY = laneY + (LANE_HEIGHT - frameHeight) / 2;
+            int laneY = getLaneTop(laneNumber);
+            int laneHeight = getLaneHeight();
+            int horseY = laneY + (laneHeight - frameHeight) / 2;
             
             horseLabel.setLocation(x, horseY);
             
@@ -649,4 +624,20 @@ public class RacePanel extends JPanel {
         
         gameFrame.updateMainMenu();
     }
+
+    // Hitung tinggi lane berdasarkan tinggi panel secara dinamis
+    private int getLaneHeight() {
+        int h = trackBackgroundPanel.getHeight();
+        if (h <= 0) {
+            // fallback kalau belum ter-layout
+            return LANE_HEIGHT; // atau 110
+        }
+        return h / NUM_COMPETITORS;
+    }
+
+    // Posisi Y (top) dari lane ke-`laneIndex`
+    private int getLaneTop(int laneIndex) {
+        return getLaneHeight() * laneIndex;
+    }
+
 }
