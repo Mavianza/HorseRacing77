@@ -6,6 +6,10 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import javax.swing.plaf.basic.BasicProgressBarUI;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import model.User;
 import model.Horse;
 import utils.UserManager;
@@ -34,6 +38,9 @@ public class UpgradePanel extends JPanel implements Displayable {
     private static final int ACCELERATION_COST_INCREMENT = 10;
     private static final int UPGRADE_AMOUNT = 10;
     private static final int MAX_STAT = 200;
+    private static final Font DIALOG_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 15);
+    private static final Color DIALOG_BG = new Color(36, 26, 18);
+    private static final Color DISABLED_BUTTON = new Color(110, 110, 110);
     
     public UpgradePanel(GameFrame gameFrame, UserManager userManager) {
         this.gameFrame = gameFrame;
@@ -135,12 +142,13 @@ public class UpgradePanel extends JPanel implements Displayable {
         speedBar.setPreferredSize(new Dimension(200, 25));
         speedBar.setStringPainted(true);
         speedBar.setName("speedBar");
+        styleProgressBar(speedBar);
         centerPanel.add(speedBar, gbc);
         
         gbc.gridx = 2;
         upgradeSpeedBtn = createUpgradeButton("Upgrade Speed");
         upgradeSpeedBtn.addActionListener(e -> upgradeSpeed());
-        centerPanel.add(upgradeSpeedBtn, gbc);
+        centerPanel.add(wrapButton(upgradeSpeedBtn), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 4;
@@ -154,12 +162,13 @@ public class UpgradePanel extends JPanel implements Displayable {
         staminaBar.setPreferredSize(new Dimension(200, 25));
         staminaBar.setStringPainted(true);
         staminaBar.setName("staminaBar");
+        styleProgressBar(staminaBar);
         centerPanel.add(staminaBar, gbc);
         
         gbc.gridx = 2;
         upgradeStaminaBtn = createUpgradeButton("Upgrade Stamina");
         upgradeStaminaBtn.addActionListener(e -> upgradeStamina());
-        centerPanel.add(upgradeStaminaBtn, gbc);
+        centerPanel.add(wrapButton(upgradeStaminaBtn), gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 5;
@@ -173,12 +182,13 @@ public class UpgradePanel extends JPanel implements Displayable {
         accelerationBar.setPreferredSize(new Dimension(200, 25));
         accelerationBar.setStringPainted(true);
         accelerationBar.setName("accelerationBar");
+        styleProgressBar(accelerationBar);
         centerPanel.add(accelerationBar, gbc);
         
         gbc.gridx = 2;
         upgradeAccelerationBtn = createUpgradeButton("Upgrade Acceleration");
         upgradeAccelerationBtn.addActionListener(e -> upgradeAcceleration());
-        centerPanel.add(upgradeAccelerationBtn, gbc);
+        centerPanel.add(wrapButton(upgradeAccelerationBtn), gbc);
         
         add(centerPanel, BorderLayout.CENTER);
 
@@ -203,7 +213,33 @@ public class UpgradePanel extends JPanel implements Displayable {
     private JButton createUpgradeButton(String text) {
         return createStyledButton(text, new Color(34, 139, 34));
     }
-    
+
+    private JPanel wrapButton(JButton button) {
+        JPanel wrapper = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        wrapper.setOpaque(false);
+        wrapper.add(button);
+        return wrapper;
+    }
+
+    private void styleProgressBar(JProgressBar bar) {
+        bar.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+        bar.setForeground(new Color(116, 165, 220));
+        bar.setBackground(new Color(32, 32, 32));
+        bar.setOpaque(true);
+        bar.setBorder(BorderFactory.createLineBorder(new Color(210, 210, 210), 1));
+        bar.setUI(new BasicProgressBarUI() {
+            @Override
+            protected Color getSelectionForeground() {
+                return Color.WHITE;
+            }
+
+            @Override
+            protected Color getSelectionBackground() {
+                return Color.WHITE;
+            }
+        });
+    }
+
     private JButton createStyledButton(String text, Color bgColor) {
         JButton button = new JButton(text) {
             @Override
@@ -211,7 +247,9 @@ public class UpgradePanel extends JPanel implements Displayable {
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                if (getModel().isPressed()) {
+                if (!isEnabled()) {
+                    g2d.setColor(DISABLED_BUTTON);
+                } else if (getModel().isPressed()) {
                     g2d.setColor(bgColor.darker());
                 } else if (getModel().isRollover()) {
                     g2d.setColor(bgColor.brighter());
@@ -221,7 +259,7 @@ public class UpgradePanel extends JPanel implements Displayable {
                 
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
                 
-                g2d.setColor(getForeground());
+                g2d.setColor(isEnabled() ? getForeground() : new Color(230, 230, 230));
                 g2d.setFont(getFont());
                 FontMetrics fm = g2d.getFontMetrics();
                 int x = (getWidth() - fm.stringWidth(getText())) / 2;
@@ -255,13 +293,20 @@ public class UpgradePanel extends JPanel implements Displayable {
     private int calculateAccelerationCost(int currentStat) {
         return calculateCost(ACCELERATION_BASE_COST, ACCELERATION_COST_INCREMENT, currentStat);
     }
+
+    private String toPercent(int value) {
+        int percent = Math.round((value * 100f) / MAX_STAT);
+        return percent + "%";
+    }
     
     private void updateUpgradeButton(JButton button, String baseText, int currentStat, int cost) {
         if (currentStat >= MAX_STAT) {
             button.setText("MAXED");
+            button.setToolTipText("This stat is already maxed");
             button.setEnabled(false);
         } else {
             button.setText(baseText + "  $" + cost + "");
+            button.setToolTipText("Upgrade cost: " + cost + " coins");
             button.setEnabled(true);
         }
     }
@@ -281,10 +326,90 @@ public class UpgradePanel extends JPanel implements Displayable {
         speedBar.setValue(horse.getSpeed());
         staminaBar.setValue(horse.getStamina());
         accelerationBar.setValue(horse.getAcceleration());
+        speedBar.setString(toPercent(horse.getSpeed()));
+        staminaBar.setString(toPercent(horse.getStamina()));
+        accelerationBar.setString(toPercent(horse.getAcceleration()));
 
         updateUpgradeButton(upgradeSpeedBtn, "Upgrade Cost :", horse.getSpeed(), calculateSpeedCost(horse.getSpeed()));
         updateUpgradeButton(upgradeStaminaBtn, "Upgrade Cost :", horse.getStamina(), calculateStaminaCost(horse.getStamina()));
         updateUpgradeButton(upgradeAccelerationBtn, "Upgrade Cost :", horse.getAcceleration(), calculateAccelerationCost(horse.getAcceleration()));
+    }
+
+    // Styled warning dialog when the player lacks coins for an upgrade (mirrors level-up look)
+    private void showNotEnoughCoins(String statName, int cost) {
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Upgrade Failed", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setUndecorated(true);
+
+        JPanel content = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, new Color(255, 225, 170),
+                    0, getHeight(), new Color(120, 70, 20)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                g2d.setColor(new Color(40, 20, 10, 160));
+                g2d.setStroke(new BasicStroke(2));
+                g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+            }
+        };
+        content.setBorder(BorderFactory.createEmptyBorder(22, 24, 18, 24));
+
+        JLabel title = new JLabel("UPGRADE FAILED", SwingConstants.CENTER);
+        title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 26));
+        title.setForeground(new Color(60, 35, 10));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JTextPane message = createDialogTextPane(
+            "You need " + cost + " coins to upgrade " + statName + ".\nRace more to earn extra coins.",
+            true
+        );
+        message.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 15));
+        message.setForeground(new Color(60, 35, 10));
+        message.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JPanel centerPanel = new JPanel();
+        centerPanel.setOpaque(false);
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.add(title);
+        centerPanel.add(Box.createVerticalStrut(10));
+        centerPanel.add(message);
+
+        JButton continueBtn = createStyledButton("CONTINUE", new Color(34, 139, 34));
+        continueBtn.setPreferredSize(new Dimension(200, 40));
+        continueBtn.addActionListener(e -> dialog.dispose());
+
+        JPanel buttonWrapper = new JPanel();
+        buttonWrapper.setOpaque(false);
+        buttonWrapper.add(continueBtn);
+
+        content.add(centerPanel, BorderLayout.CENTER);
+        content.add(buttonWrapper, BorderLayout.SOUTH);
+
+        dialog.setContentPane(content);
+        dialog.pack();
+        dialog.setSize(new Dimension(420, 230));
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+
+    private JTextPane createDialogTextPane(String text, boolean center) {
+        JTextPane pane = new JTextPane();
+        pane.setEditable(false);
+        pane.setOpaque(false);
+        pane.setFont(DIALOG_FONT);
+        pane.setForeground(Color.WHITE);
+        pane.setText(text);
+        StyledDocument doc = pane.getStyledDocument();
+        SimpleAttributeSet attrs = new SimpleAttributeSet();
+        StyleConstants.setAlignment(attrs, center ? StyleConstants.ALIGN_CENTER : StyleConstants.ALIGN_LEFT);
+        doc.setParagraphAttributes(0, doc.getLength(), attrs, false);
+        pane.setCaretPosition(0);
+        return pane;
     }
     
     private void upgradeSpeed() {
@@ -300,8 +425,7 @@ public class UpgradePanel extends JPanel implements Displayable {
         
         int cost = calculateSpeedCost(horse.getSpeed());
         if (!currentUser.spendCoins(cost)) {
-            JOptionPane.showMessageDialog(this, "Not enough coins (" + cost + " needed).", 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            showNotEnoughCoins("Speed", cost);
             return;
         }
 
@@ -328,8 +452,7 @@ public class UpgradePanel extends JPanel implements Displayable {
         
         int cost = calculateStaminaCost(horse.getStamina());
         if (!currentUser.spendCoins(cost)) {
-            JOptionPane.showMessageDialog(this, "Not enough coins (" + cost + " needed).", 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            showNotEnoughCoins("Stamina", cost);
             return;
         }
 
@@ -356,8 +479,7 @@ public class UpgradePanel extends JPanel implements Displayable {
         
         int cost = calculateAccelerationCost(horse.getAcceleration());
         if (!currentUser.spendCoins(cost)) {
-            JOptionPane.showMessageDialog(this, "Not enough coins (" + cost + " needed).", 
-                "Error", JOptionPane.ERROR_MESSAGE);
+            showNotEnoughCoins("Acceleration", cost);
             return;
         }
 

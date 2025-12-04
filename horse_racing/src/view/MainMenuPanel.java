@@ -6,6 +6,9 @@ import java.awt.geom.*;
 import java.io.File;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import model.User;
 import model.Horse;
 
@@ -15,6 +18,9 @@ public class MainMenuPanel extends JPanel implements Displayable {
     private JLabel horseInfoLabel;
     private JLabel coinsLabel;
     private BufferedImage backgroundImage;
+    private static final Font DIALOG_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 15);
+    private static final Color DIALOG_BG = new Color(36, 26, 18);
+    private static final Color ACCENT_COLOR = new Color(255, 215, 0);
     
     public MainMenuPanel(GameFrame gameFrame) {
         this.gameFrame = gameFrame;
@@ -156,10 +162,12 @@ public class MainMenuPanel extends JPanel implements Displayable {
         gbc.insets = new Insets(8, 20, 20, 20);
         JButton logoutButton = createStyledButton("LOGOUT", new Color(178, 34, 34));
         logoutButton.addActionListener(e -> {
-            int result = JOptionPane.showConfirmDialog(this, 
-                "Are you sure you want to logout?", 
-                "Confirm Logout", 
-                JOptionPane.YES_NO_OPTION);
+            int result = showStyledConfirmDialog(
+                "Confirm Logout",
+                "Are you sure you want to logout?",
+                "Logout",
+                "Cancel"
+            );
             
             if (result == JOptionPane.YES_OPTION) {
                 gameFrame.setCurrentUser(null);
@@ -215,5 +223,113 @@ public class MainMenuPanel extends JPanel implements Displayable {
                 horseInfoLabel.setText("🐎 " + horse.getName() + " (Lvl " + horse.getLevel() + ")");
             }
         }
+    }
+
+    private int showStyledConfirmDialog(String title, String message, String okLabel, String cancelLabel) {
+        final int[] result = {JOptionPane.CLOSED_OPTION};
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), title, Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setUndecorated(true);
+
+        JPanel content = new JPanel(new BorderLayout(0, 12)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                GradientPaint gradient = new GradientPaint(
+                    0, 0, new Color(255, 225, 170),
+                    0, getHeight(), new Color(120, 70, 20)
+                );
+                g2d.setPaint(gradient);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+                g2d.setColor(new Color(40, 20, 10, 160));
+                g2d.setStroke(new BasicStroke(2));
+                g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+            }
+        };
+        content.setBorder(BorderFactory.createEmptyBorder(20, 24, 16, 24));
+
+        JLabel titleLabel = new JLabel(title.toUpperCase(), SwingConstants.CENTER);
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+        titleLabel.setForeground(new Color(70, 40, 10));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JTextPane textPane = createDialogTextPane(message, DIALOG_FONT, new Color(60, 35, 10), true);
+        textPane.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JPanel centerPanel = new JPanel();
+        centerPanel.setOpaque(false);
+        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
+        centerPanel.add(titleLabel);
+        centerPanel.add(Box.createVerticalStrut(10));
+        centerPanel.add(textPane);
+
+        JButton okButton = createDialogButton(okLabel, new Color(178, 34, 34));
+        okButton.addActionListener(e -> {
+            result[0] = JOptionPane.YES_OPTION;
+            dialog.dispose();
+        });
+        JButton cancelButton = createDialogButton(cancelLabel, new Color(128, 128, 128));
+        cancelButton.addActionListener(e -> {
+            result[0] = JOptionPane.NO_OPTION;
+            dialog.dispose();
+        });
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+
+        content.add(centerPanel, BorderLayout.CENTER);
+        content.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setContentPane(content);
+        dialog.pack();
+        dialog.setSize(new Dimension(420, 210));
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+
+        return result[0];
+    }
+
+    private JButton createDialogButton(String text, Color bgColor) {
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                Color base = isEnabled() ? bgColor : bgColor.darker();
+                if (getModel().isPressed()) {
+                    base = base.darker();
+                } else if (getModel().isRollover()) {
+                    base = base.brighter();
+                }
+                g2d.setColor(base);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
+                super.paintComponent(g);
+            }
+        };
+        button.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
+        button.setPreferredSize(new Dimension(130, 40));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+
+    private JTextPane createDialogTextPane(String text, Font font, Color color, boolean center) {
+        JTextPane pane = new JTextPane();
+        pane.setEditable(false);
+        pane.setOpaque(false);
+        pane.setFont(font);
+        pane.setForeground(color);
+        pane.setText(text);
+        StyledDocument doc = pane.getStyledDocument();
+        SimpleAttributeSet attrs = new SimpleAttributeSet();
+        StyleConstants.setAlignment(attrs, center ? StyleConstants.ALIGN_CENTER : StyleConstants.ALIGN_LEFT);
+        doc.setParagraphAttributes(0, doc.getLength(), attrs, false);
+        return pane;
     }
 }
