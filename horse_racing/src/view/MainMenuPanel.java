@@ -1,16 +1,15 @@
 package view;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import javax.swing.*;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
-import model.User;
 import model.Horse;
+import model.User;
 
 public class MainMenuPanel extends JPanel implements Displayable {
     private GameFrame gameFrame;
@@ -236,25 +235,34 @@ public class MainMenuPanel extends JPanel implements Displayable {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(255, 225, 170),
-                    0, getHeight(), new Color(120, 70, 20)
-                );
-                g2d.setPaint(gradient);
+
+                // === background cokelat gelap (#5C391C) ===
+                Color brown = new Color(92, 57, 28);
+                g2d.setColor(brown);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-                g2d.setColor(new Color(40, 20, 10, 160));
+
+                // border sedikit lebih gelap
+                g2d.setColor(brown.darker());
                 g2d.setStroke(new BasicStroke(2));
                 g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
             }
         };
         content.setBorder(BorderFactory.createEmptyBorder(20, 24, 16, 24));
 
+        // === judul dialog ===
         JLabel titleLabel = new JLabel(title.toUpperCase(), SwingConstants.CENTER);
         titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
-        titleLabel.setForeground(new Color(70, 40, 10));
+        // krem, sama vibe dengan "Player: oming"
+        titleLabel.setForeground(new Color(255, 235, 205));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JTextPane textPane = createDialogTextPane(message, DIALOG_FONT, new Color(60, 35, 10), true);
+        // === isi pesan ===
+        JTextPane textPane = createDialogTextPane(
+            message,
+            DIALOG_FONT,
+            new Color(255, 235, 205),  // teks krem juga
+            true
+        );
         textPane.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         JPanel centerPanel = new JPanel();
@@ -284,6 +292,8 @@ public class MainMenuPanel extends JPanel implements Displayable {
         content.add(buttonPanel, BorderLayout.SOUTH);
 
         dialog.setContentPane(content);
+
+        // ⬇️ ukuran dialog tetap seperti versi lama
         dialog.pack();
         dialog.setSize(new Dimension(420, 210));
         dialog.setLocationRelativeTo(this);
@@ -291,6 +301,7 @@ public class MainMenuPanel extends JPanel implements Displayable {
 
         return result[0];
     }
+
 
     private JButton createDialogButton(String text, Color bgColor) {
         JButton button = new JButton(text) {

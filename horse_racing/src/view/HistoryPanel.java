@@ -1,14 +1,14 @@
 package view;
 
+import java.awt.*;
+import java.util.List;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
-import java.awt.*;
-import java.util.List;
 import model.RaceHistory;
 import utils.UserManager;
 
@@ -163,22 +163,24 @@ public class HistoryPanel extends JPanel implements Displayable {
 
     // Friendly info dialog used for empty history and other soft notices
     private void showFriendlyInfoDialog(String title, String message) {
-        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), title, Dialog.ModalityType.APPLICATION_MODAL);
+        JDialog dialog = new JDialog(
+                SwingUtilities.getWindowAncestor(this),
+                title,
+                Dialog.ModalityType.APPLICATION_MODAL
+        );
         dialog.setUndecorated(true);
 
-        JPanel content = new JPanel(new BorderLayout()) {
+        JPanel content = new JPanel(new BorderLayout(0, 12)) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(255, 225, 170),
-                    0, getHeight(), new Color(120, 70, 20)
-                );
-                g2d.setPaint(gradient);
+
+                Color brown = new Color(92, 57, 28);
+                g2d.setColor(brown);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-                g2d.setColor(new Color(40, 20, 10, 160));
+
+                g2d.setColor(brown.darker());
                 g2d.setStroke(new BasicStroke(2));
                 g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
             }
@@ -186,13 +188,18 @@ public class HistoryPanel extends JPanel implements Displayable {
         content.setBorder(BorderFactory.createEmptyBorder(20, 24, 16, 24));
 
         JLabel titleLabel = new JLabel(title.toUpperCase(), SwingConstants.CENTER);
-        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
-        titleLabel.setForeground(new Color(70, 40, 10));
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+        titleLabel.setForeground(new Color(255, 235, 205));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JTextPane textPane = createDialogTextPane(message, true);
+        // ⬇️ pakai helper JTextPane yang baru
+        JTextPane textPane = createDialogTextPane(
+                message,
+                new Font(Font.SANS_SERIF, Font.PLAIN, 16),
+                new Color(255, 235, 205),
+                true
+        );
         textPane.setAlignmentX(Component.CENTER_ALIGNMENT);
-        textPane.setForeground(new Color(60, 35, 10));
 
         JPanel centerPanel = new JPanel();
         centerPanel.setOpaque(false);
@@ -203,33 +210,42 @@ public class HistoryPanel extends JPanel implements Displayable {
 
         JButton okButton = createDialogButton("OK", new Color(34, 139, 34));
         okButton.addActionListener(e -> dialog.dispose());
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setOpaque(false);
-        buttonPanel.add(okButton);
+
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setOpaque(false);
+        bottomPanel.add(okButton);
 
         content.add(centerPanel, BorderLayout.CENTER);
-        content.add(buttonPanel, BorderLayout.SOUTH);
+        content.add(bottomPanel, BorderLayout.SOUTH);
 
         dialog.setContentPane(content);
         dialog.pack();
-        dialog.setSize(new Dimension(420, 200));
+        dialog.setSize(new Dimension(420, 210));
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
     }
 
-    private JTextPane createDialogTextPane(String text, boolean center) {
+
+
+    // Helper JTextPane untuk dialog (sama seperti di MainMenuPanel)
+    private JTextPane createDialogTextPane(String text, Font font, Color color, boolean center) {
         JTextPane pane = new JTextPane();
         pane.setEditable(false);
         pane.setOpaque(false);
-        pane.setFont(DIALOG_FONT);
-        pane.setForeground(Color.WHITE);
+        pane.setFont(font);
+        pane.setForeground(color);
         pane.setText(text);
+
         StyledDocument doc = pane.getStyledDocument();
         SimpleAttributeSet attrs = new SimpleAttributeSet();
-        StyleConstants.setAlignment(attrs, center ? StyleConstants.ALIGN_CENTER : StyleConstants.ALIGN_LEFT);
+        StyleConstants.setAlignment(attrs,
+                center ? StyleConstants.ALIGN_CENTER : StyleConstants.ALIGN_LEFT);
         doc.setParagraphAttributes(0, doc.getLength(), attrs, false);
+
         return pane;
     }
+
+
 
     private JButton createDialogButton(String text, Color baseColor) {
         JButton button = new JButton(text) {

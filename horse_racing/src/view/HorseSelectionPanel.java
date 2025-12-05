@@ -1,11 +1,11 @@
 package view;
 
-import javax.swing.*;
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
@@ -194,62 +194,66 @@ public class HorseSelectionPanel extends JPanel {
     
     // Consistent success dialog after creating a new horse
     private void showSuccessDialog(String horseName) {
-        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Horse Created", Dialog.ModalityType.APPLICATION_MODAL);
+        JDialog dialog = new JDialog(
+                SwingUtilities.getWindowAncestor(this),
+                "Horse Created",
+                Dialog.ModalityType.APPLICATION_MODAL
+        );
         dialog.setUndecorated(true);
 
-        JPanel content = new JPanel(new BorderLayout()) {
+        JPanel content = new JPanel(new BorderLayout(0, 12)) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(255, 225, 170),
-                    0, getHeight(), new Color(120, 70, 20)
-                );
-                g2d.setPaint(gradient);
+
+                Color brown = new Color(92, 57, 28);
+                g2d.setColor(brown);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-                g2d.setColor(new Color(40, 20, 10, 160));
+
+                g2d.setColor(brown.darker());
                 g2d.setStroke(new BasicStroke(2));
-                g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+                g2d.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, 16, 16);
             }
         };
         content.setBorder(BorderFactory.createEmptyBorder(20, 24, 16, 24));
 
-        JLabel title = new JLabel("HORSE CREATED", SwingConstants.CENTER);
-        title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 22));
-        title.setForeground(new Color(70, 40, 10));
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel titleLabel = new JLabel("HORSE CREATED", SwingConstants.CENTER);
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+        titleLabel.setForeground(new Color(255, 235, 205));
 
-        JTextPane message = createCenteredTextPane(
-            "Horse \"" + horseName + "\" is ready to race. Good luck out there!",
-            DIALOG_FONT,
-            new Color(60, 35, 10)
+        JTextPane textPane = createDialogTextPane(
+                "Your horse \"" + horseName + "\" is ready to race!",
+                new Font(Font.SANS_SERIF, Font.PLAIN, 16),
+                new Color(255, 235, 205),
+                true
         );
-        message.setAlignmentX(Component.CENTER_ALIGNMENT);
+        textPane.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JPanel centerPanel = new JPanel();
-        centerPanel.setOpaque(false);
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.add(title);
-        centerPanel.add(Box.createVerticalStrut(10));
-        centerPanel.add(message);
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
+        center.add(titleLabel);
+        center.add(Box.createVerticalStrut(10));
+        center.add(textPane);
 
         JButton okButton = createDialogButton("CONTINUE", new Color(34, 139, 34));
         okButton.addActionListener(e -> dialog.dispose());
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.setOpaque(false);
-        buttonPanel.add(okButton);
 
-        content.add(centerPanel, BorderLayout.CENTER);
-        content.add(buttonPanel, BorderLayout.SOUTH);
+        JPanel bottom = new JPanel();
+        bottom.setOpaque(false);
+        bottom.add(okButton);
+
+        content.add(center, BorderLayout.CENTER);
+        content.add(bottom, BorderLayout.SOUTH);
 
         dialog.setContentPane(content);
         dialog.pack();
-        dialog.setSize(new Dimension(430, 220));
+        dialog.setSize(new Dimension(430, 210));
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
     }
+
 
     private JTextPane createCenteredTextPane(String text, Font font, Color color) {
         JTextPane pane = new JTextPane();
@@ -319,4 +323,26 @@ public class HorseSelectionPanel extends JPanel {
         
         gameFrame.showPanel("mainMenu");
     }
+
+    // Helper untuk teks di dialog HorseSelectionPanel
+    // Helper JTextPane untuk dialog (sama seperti di MainMenuPanel)
+    private JTextPane createDialogTextPane(String text, Font font, Color color, boolean center) {
+        JTextPane pane = new JTextPane();
+        pane.setEditable(false);
+        pane.setOpaque(false);
+        pane.setFont(font);
+        pane.setForeground(color);
+        pane.setText(text);
+
+        StyledDocument doc = pane.getStyledDocument();
+        SimpleAttributeSet attrs = new SimpleAttributeSet();
+        StyleConstants.setAlignment(attrs,
+                center ? StyleConstants.ALIGN_CENTER : StyleConstants.ALIGN_LEFT);
+        doc.setParagraphAttributes(0, doc.getLength(), attrs, false);
+
+        return pane;
+    }
+
+
+
 }

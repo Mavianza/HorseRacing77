@@ -1,17 +1,17 @@
 package view;
 
-import javax.swing.*;
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import javax.imageio.ImageIO;
+import javax.swing.*;
 import javax.swing.plaf.basic.BasicProgressBarUI;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledDocument;
-import model.User;
 import model.Horse;
+import model.User;
 import utils.UserManager;
 
 public class UpgradePanel extends JPanel implements Displayable {
@@ -336,81 +336,105 @@ public class UpgradePanel extends JPanel implements Displayable {
     }
 
     // Styled warning dialog when the player lacks coins for an upgrade (mirrors level-up look)
+    // Styled warning dialog when the player lacks coins for an upgrade (mirrors level-up look)
     private void showNotEnoughCoins(String statName, int cost) {
-        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Upgrade Failed", Dialog.ModalityType.APPLICATION_MODAL);
+        JDialog dialog = new JDialog(
+                SwingUtilities.getWindowAncestor(this),
+                "Upgrade Failed",
+                Dialog.ModalityType.APPLICATION_MODAL
+        );
         dialog.setUndecorated(true);
 
-        JPanel content = new JPanel(new BorderLayout()) {
+        JPanel content = new JPanel(new BorderLayout(0, 12)) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(255, 225, 170),
-                    0, getHeight(), new Color(120, 70, 20)
-                );
-                g2d.setPaint(gradient);
+
+                Color brown = new Color(92, 57, 28);
+                g2d.setColor(brown);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-                g2d.setColor(new Color(40, 20, 10, 160));
+
+                g2d.setColor(brown.darker());
                 g2d.setStroke(new BasicStroke(2));
                 g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
             }
         };
         content.setBorder(BorderFactory.createEmptyBorder(22, 24, 18, 24));
 
-        JLabel title = new JLabel("UPGRADE FAILED", SwingConstants.CENTER);
-        title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 26));
-        title.setForeground(new Color(60, 35, 10));
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JLabel titleLabel = new JLabel("UPGRADE FAILED", SwingConstants.CENTER);
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+        titleLabel.setForeground(new Color(255, 235, 205));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JTextPane message = createDialogTextPane(
-            "You need " + cost + " coins to upgrade " + statName + ".\nRace more to earn extra coins.",
-            true
+        // ⬇️ pakai helper, font & warna seragam
+        JTextPane textPane = createDialogTextPane(
+                "You need " + cost + " coins to upgrade " + statName +
+                ".\nRace more to earn extra coins.",
+                DIALOG_FONT,                              // pakai konstanta di atas
+                new Color(255, 235, 205),                // krem
+                true                                     // center
         );
-        message.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 15));
-        message.setForeground(new Color(60, 35, 10));
-        message.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JPanel centerPanel = new JPanel();
-        centerPanel.setOpaque(false);
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.add(title);
-        centerPanel.add(Box.createVerticalStrut(10));
-        centerPanel.add(message);
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
+        center.add(titleLabel);
+        center.add(Box.createVerticalStrut(10));
+        center.add(textPane);
 
-        JButton continueBtn = createStyledButton("CONTINUE", new Color(34, 139, 34));
-        continueBtn.setPreferredSize(new Dimension(200, 40));
-        continueBtn.addActionListener(e -> dialog.dispose());
+        JButton okButton = createStyledButton("CONTINUE", new Color(34, 139, 34));
+        okButton.addActionListener(e -> dialog.dispose());
 
-        JPanel buttonWrapper = new JPanel();
-        buttonWrapper.setOpaque(false);
-        buttonWrapper.add(continueBtn);
+        JPanel bottom = new JPanel();
+        bottom.setOpaque(false);
+        bottom.add(okButton);
 
-        content.add(centerPanel, BorderLayout.CENTER);
-        content.add(buttonWrapper, BorderLayout.SOUTH);
+        content.add(center, BorderLayout.CENTER);
+        content.add(bottom, BorderLayout.SOUTH);
 
         dialog.setContentPane(content);
         dialog.pack();
-        dialog.setSize(new Dimension(420, 230));
+        dialog.setSize(new Dimension(440, 220));
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
     }
 
-    private JTextPane createDialogTextPane(String text, boolean center) {
+
+
+    private JTextPane createDialogTextPane(String text, Font font, Color color, boolean center) {
         JTextPane pane = new JTextPane();
         pane.setEditable(false);
+        pane.setFocusable(false);
         pane.setOpaque(false);
-        pane.setFont(DIALOG_FONT);
-        pane.setForeground(Color.WHITE);
+
+        pane.setFont(font);
         pane.setText(text);
+
         StyledDocument doc = pane.getStyledDocument();
         SimpleAttributeSet attrs = new SimpleAttributeSet();
-        StyleConstants.setAlignment(attrs, center ? StyleConstants.ALIGN_CENTER : StyleConstants.ALIGN_LEFT);
-        doc.setParagraphAttributes(0, doc.getLength(), attrs, false);
-        pane.setCaretPosition(0);
+
+        // alignment tengah / kiri
+        StyleConstants.setAlignment(attrs,
+                center ? StyleConstants.ALIGN_CENTER : StyleConstants.ALIGN_LEFT);
+
+        // ⬇️ INI YANG PENTING: warna + font di level dokumen
+        StyleConstants.setForeground(attrs, color);
+        StyleConstants.setFontFamily(attrs, font.getFamily());
+        StyleConstants.setFontSize(attrs, font.getSize());
+
+        // apply ke seluruh teks
+        doc.setParagraphAttributes(0, doc.getLength(), attrs, true);
+
+        // biar benar2 di tengah kalau pakai BoxLayout
+        pane.setAlignmentX(Component.CENTER_ALIGNMENT);
+
         return pane;
     }
+
+
+
+
     
     private void upgradeSpeed() {
         User currentUser = gameFrame.getCurrentUser();
@@ -504,73 +528,73 @@ public class UpgradePanel extends JPanel implements Displayable {
     }
 
     private void showLevelUpDialog(Horse horse, int oldLevel) {
-        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Level Up", Dialog.ModalityType.APPLICATION_MODAL);
+        JDialog dialog = new JDialog(
+                SwingUtilities.getWindowAncestor(this),
+                "Level Up",
+                Dialog.ModalityType.APPLICATION_MODAL
+        );
         dialog.setUndecorated(true);
 
-        JPanel content = new JPanel(new BorderLayout()) {
+        JPanel content = new JPanel(new BorderLayout(0, 12)) {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(255, 224, 160),
-                    0, getHeight(), new Color(120, 70, 20)
-                );
-                g2d.setPaint(gradient);
+
+                Color brown = new Color(92, 57, 28);
+                g2d.setColor(brown);
                 g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-                g2d.setColor(new Color(40, 20, 10, 160));
+
+                g2d.setColor(brown.darker());
                 g2d.setStroke(new BasicStroke(2));
-                g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+                g2d.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, 16, 16);
             }
         };
         content.setBorder(BorderFactory.createEmptyBorder(20, 24, 16, 24));
 
-        JLabel titleLabel = new JLabel("LEVEL UP!", SwingConstants.CENTER);
-        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
-        titleLabel.setForeground(new Color(70, 40, 5));
+        JLabel title = new JLabel("LEVEL UP!", SwingConstants.CENTER);
+        title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 28));
+        title.setForeground(new Color(255, 235, 205));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);   // ⬅️ penting
 
-        JLabel horseLabel = new JLabel(horse.getName(), SwingConstants.CENTER);
-        horseLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
-        horseLabel.setForeground(new Color(30, 30, 30));
+        JLabel name = new JLabel(horse.getName(), SwingConstants.CENTER);
+        name.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 20));
+        name.setForeground(new Color(255, 235, 205));
+        name.setAlignmentX(Component.CENTER_ALIGNMENT);    // ⬅️ penting
 
-        JLabel levelLabel = new JLabel("Level " + oldLevel + " -> Level " + horse.getLevel(), SwingConstants.CENTER);
-        levelLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
-        levelLabel.setForeground(new Color(50, 30, 10));
-
-        JLabel statsLabel = new JLabel(
-            "Speed " + horse.getSpeed() + " | Stamina " + horse.getStamina() + " | Acceleration " + horse.getAcceleration(),
-            SwingConstants.CENTER
+        JLabel level = new JLabel(
+                "Level " + oldLevel + " → Level " + horse.getLevel(),
+                SwingConstants.CENTER
         );
-        statsLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
-        statsLabel.setForeground(new Color(60, 40, 20));
+        level.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 18));
+        level.setForeground(new Color(255, 235, 205));
+        level.setAlignmentX(Component.CENTER_ALIGNMENT);   // ⬅️ penting
 
-        JPanel centerPanel = new JPanel();
-        centerPanel.setOpaque(false);
-        centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.add(titleLabel);
-        centerPanel.add(Box.createVerticalStrut(10));
-        centerPanel.add(horseLabel);
-        centerPanel.add(Box.createVerticalStrut(8));
-        centerPanel.add(levelLabel);
-        centerPanel.add(Box.createVerticalStrut(6));
-        centerPanel.add(statsLabel);
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
+        center.add(title);
+        center.add(Box.createVerticalStrut(10));
+        center.add(name);
+        center.add(Box.createVerticalStrut(8));
+        center.add(level);
 
-        JButton closeButton = createStyledButton("CONTINUE", new Color(34, 139, 34));
-        closeButton.setPreferredSize(new Dimension(200, 40));
-        closeButton.addActionListener(e -> dialog.dispose());
+        JButton ok = createStyledButton("CONTINUE", new Color(34, 139, 34));
+        ok.addActionListener(e -> dialog.dispose());
 
-        JPanel buttonWrapper = new JPanel();
-        buttonWrapper.setOpaque(false);
-        buttonWrapper.add(closeButton);
+        JPanel bottom = new JPanel();
+        bottom.setOpaque(false);
+        bottom.add(ok);
 
-        content.add(centerPanel, BorderLayout.CENTER);
-        content.add(buttonWrapper, BorderLayout.SOUTH);
+        content.add(center, BorderLayout.CENTER);
+        content.add(bottom, BorderLayout.SOUTH);
 
         dialog.setContentPane(content);
         dialog.pack();
-        dialog.setSize(new Dimension(420, 240));
+        dialog.setSize(new Dimension(460, 230));
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
     }
+
+
 }
