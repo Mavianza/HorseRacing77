@@ -23,21 +23,6 @@ public class SoundPlayer {
         }
     }
 
-    public void playOnce(String filePath) {
-        try {
-            if (clip != null && clip.isRunning()) {
-                clip.stop();
-            }
-
-            AudioInputStream audioStream = AudioSystem.getAudioInputStream(new File(filePath));
-            clip = AudioSystem.getClip();
-            clip.open(audioStream);
-            clip.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public void stop() {
         if (clip != null) {
             clip.stop();

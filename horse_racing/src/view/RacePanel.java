@@ -28,7 +28,6 @@ public class RacePanel extends JPanel {
     private static final int HORSE_WIDTH = 80;
     private static final int HORSE_HEIGHT = 80;
     private static final int TRACK_START_X = 100;
-    private static final int TRACK_TOP_MARGIN = 15;
     private static final int RACE_UPDATE_DELAY_MS = 30;
     private static final int ANIMATION_DELAY_MS = 80;
     
@@ -116,14 +115,8 @@ public class RacePanel extends JPanel {
                     // gambar track sebagai background, di-scale mengikuti ukuran panel
                     g2d.drawImage(trackImage, 0, 0, getWidth(), getHeight(), null);
                 }
-
-                if (!useAnimatedGif) {
-                    drawHorses(g);
-                }
             }
         };
-        trackBackgroundPanel.setBackground(new Color(210, 180, 140));
-        trackBackgroundPanel.setOpaque(true);
         
         trackLayeredPane.add(trackBackgroundPanel, JLayeredPane.DEFAULT_LAYER);
         
@@ -260,48 +253,6 @@ public class RacePanel extends JPanel {
             case 2: return "2nd";
             case 3: return "3rd";
             default: return position + "th";
-        }
-    }
-    
-    private void drawHorses(Graphics g) {
-        if (horses.isEmpty()) return;
-        
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
-        
-        for (int i = 0; i < horses.size(); i++) {
-            RaceHorse horse = horses.get(i);
-            int x = TRACK_START_X + horse.getPosition();
-            int laneNumber = laneMappings.get(i);
-            int laneY = getLaneTop(laneNumber);
-            int laneHeight = getLaneHeight();
-            int horseY = laneY + (laneHeight - HORSE_HEIGHT) / 2;
-
-            
-            BufferedImage horseImage = HorseAssets.createHorseImage(HORSE_WIDTH, HORSE_HEIGHT);
-            g2d.drawImage(horseImage, x, horseY, null);
-            
-            String name = horse.getName();
-            FontMetrics fm = g2d.getFontMetrics();
-            int nameWidth = fm.stringWidth(name);
-            int nameX = x + (HORSE_WIDTH - nameWidth) / 2;
-            int nameY = laneY + 12;
-            
-            g2d.setColor(new Color(255, 255, 255, 180));
-            g2d.fillRoundRect(nameX - 3, nameY - 10, nameWidth + 6, 14, 4, 4);
-            
-            g2d.setColor(Color.BLACK);
-            g2d.drawString(name, nameX, nameY);
-            
-            if (horse.isPlayer()) {
-                g2d.setColor(new Color(255, 200, 0));
-                g2d.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-                int youX = x + (HORSE_WIDTH / 2) - 15;
-                int youY = laneY + LANE_HEIGHT - 5;
-                g2d.drawString("★ YOU", youX, youY);
-                g2d.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
-            }
         }
     }
     
@@ -486,9 +437,7 @@ public class RacePanel extends JPanel {
         }
         Collections.shuffle(laneMappings);
         
-        if (useAnimatedGif) {
-            createHorseLabels();
-        }
+        createHorseLabels();
         
         trackBackgroundPanel.repaint();
     }
@@ -504,19 +453,11 @@ public class RacePanel extends JPanel {
         finishOrder.clear();
         resetResultPanel();
         
-        updateTimer = new Timer(RACE_UPDATE_DELAY_MS, e -> {
-            if (useAnimatedGif) {
-                updateHorseLabelPositions();
-            } else {
-                trackBackgroundPanel.repaint();
-            }
-        });
+        updateTimer = new Timer(RACE_UPDATE_DELAY_MS, e -> updateHorseLabelPositions());
         updateTimer.setCoalesce(true);
         updateTimer.start();
         
-        if (useAnimatedGif) {
-            startAnimationTimer();
-        }
+        startAnimationTimer();
         
         for (RaceHorse horse : horses) {
             Thread raceThread = new Thread(() -> {
