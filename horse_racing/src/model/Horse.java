@@ -1,7 +1,6 @@
 package model;
 
 public class Horse extends BaseEntity implements Upgradable {
-    private static final long serialVersionUID = 1L;
     
     private String name;
     private int speed;

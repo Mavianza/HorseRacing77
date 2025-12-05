@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class RaceHistory extends BaseEntity {
-    private static final long serialVersionUID = 1L;
     
     private int userId;
     private String horseName;
