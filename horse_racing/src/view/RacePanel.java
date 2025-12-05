@@ -11,6 +11,9 @@ import java.util.Collections;
 import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
 import model.RaceHistory;
 import model.RaceHorse;
 import model.User;
@@ -25,8 +28,8 @@ public class RacePanel extends JPanel {
     private BufferedImage trackImage;
     private static final int NUM_COMPETITORS = 5;
     private static final int LANE_HEIGHT = 110;
-    private static final int HORSE_WIDTH = 80;
-    private static final int HORSE_HEIGHT = 80;
+    private static final int HORSE_WIDTH = 160;
+    private static final int HORSE_HEIGHT = 160;
     private static final int TRACK_START_X = 100;
     private static final int RACE_UPDATE_DELAY_MS = 30;
     private static final int ANIMATION_DELAY_MS = 80;
@@ -511,17 +514,27 @@ public class RacePanel extends JPanel {
         }).start();
     }
     
+    // Tampilkan hasil balapan dengan dialog bergaya cokelat–krem
+    // Susun teks hasil balapan lalu tampilkan dialog
+    // Susun teks hasil balapan + info posisi & reward, lalu tampilkan dialog
     private void showRaceResults() {
         User currentUser = gameFrame.getCurrentUser();
         int playerPosition = -1;
-        
-        for (int i = 0; i < finishOrder.size(); i++) {
-            if (finishOrder.get(i).isPlayer()) {
-                playerPosition = i + 1;
-                break;
+        RaceHorse playerHorse = null;
+    
+        // cari posisi player di finishOrder
+        synchronized (finishOrder) {
+            for (int i = 0; i < finishOrder.size(); i++) {
+                RaceHorse h = finishOrder.get(i);
+                if (h.isPlayer()) {
+                    playerPosition = i + 1;
+                    playerHorse = h;
+                    break;
+                }
             }
         }
-        
+    
+        // hitung coins (pakai skema LAMA: 100/50/25/0)
         int coinsEarned = 0;
         if (playerPosition == 1) {
             coinsEarned = 100;
@@ -530,45 +543,139 @@ public class RacePanel extends JPanel {
         } else if (playerPosition == 3) {
             coinsEarned = 25;
         }
-        
-        currentUser.addCoins(coinsEarned);
-        userManager.updateUser(currentUser);
-        
-        RaceHistory history = new RaceHistory(
-            currentUser.getUserId(),
-            currentUser.getHorse().getName(),
-            playerPosition,
-            NUM_COMPETITORS,
-            coinsEarned
-        );
-        userManager.addRaceHistory(history);
-        
-        StringBuilder results = new StringBuilder();
-        results.append("RACE RESULTS\n\n");
-        for (int i = 0; i < finishOrder.size(); i++) {
-            RaceHorse horse = finishOrder.get(i);
-            results.append(String.format("%d. %s %s\n", 
-                i + 1, 
-                horse.getName(),
-                horse.isPlayer() ? "(YOU)" : ""));
+    
+        // update koin player + simpan ke DB
+        if (currentUser != null) {
+            currentUser.addCoins(coinsEarned);
+            userManager.updateUser(currentUser);
+    
+            // simpan history balapan
+            RaceHistory history = new RaceHistory(
+                    currentUser.getUserId(),
+                    currentUser.getHorse().getName(),
+                    playerPosition,
+                    NUM_COMPETITORS,
+                    coinsEarned
+            );
+            userManager.addRaceHistory(history);
         }
-        results.append("\n");
-        
-        if (playerPosition == 1) {
-            results.append("🏆 CONGRATULATIONS! YOU WON! 🏆\n");
-        } else if (playerPosition <= 3) {
-            results.append("🎉 Good race! You placed " + playerPosition + "!\n");
+    
+        // ==== susun teks hasil utk dialog coklat–krem ====
+        StringBuilder sb = new StringBuilder();
+    
+        if (finishOrder.isEmpty()) {
+            sb.append("No race results available.");
         } else {
-            results.append("Keep practicing!\n");
+            // header: posisi + coins
+            if (playerHorse != null) {
+                sb.append("You finished ")
+                  .append(getRankingSuffix(playerPosition))
+                  .append("!\nCoins earned: ")
+                  .append(coinsEarned)
+                  .append("\n\n");
+            }
+    
+            // pesan kecil seperti versi lama
+            if (playerPosition == 1) {
+                sb.append("🏆 CONGRATULATIONS! YOU WON! 🏆\n\n");
+            } else if (playerPosition > 0 && playerPosition <= 3) {
+                sb.append("🎉 Good race! You placed ")
+                  .append(playerPosition)
+                  .append("!\n\n");
+            } else if (playerPosition > 0) {
+                sb.append("Keep practicing!\n\n");
+            }
+    
+            // daftar lengkap hasil
+            for (int i = 0; i < finishOrder.size(); i++) {
+                RaceHorse h = finishOrder.get(i);
+                String rank = getRankingSuffix(i + 1);
+    
+                sb.append(rank)
+                  .append(" - ")
+                  .append(h.getName());
+    
+                if (h.isPlayer()) {
+                    sb.append(" (You)");
+                }
+    
+                if (i < finishOrder.size() - 1) {
+                    sb.append("\n");
+                }
+            }
         }
-        
-        results.append("Coins earned: " + coinsEarned);
-        
-        JOptionPane.showMessageDialog(this, results.toString(), 
-            "Race Finished", JOptionPane.INFORMATION_MESSAGE);
-        
+    
+        // tampilkan di dialog styled
+        showRaceResultsDialog(sb.toString());
+    
+        // refresh main menu (label coins dll)
         gameFrame.updateMainMenu();
     }
+    
+
+
+    // Dialog hasil balapan dengan style cokelat–krem
+    private void showRaceResultsDialog(String resultText) {
+        JDialog dialog = new JDialog(
+                SwingUtilities.getWindowAncestor(this),
+                "Race Result",
+                Dialog.ModalityType.APPLICATION_MODAL
+        );
+        dialog.setUndecorated(true);
+
+        JPanel content = new JPanel(new BorderLayout(0, 12)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+
+                Color brown = new Color(92, 57, 28);
+                g2d.setColor(brown);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+
+                g2d.setColor(brown.darker());
+                g2d.setStroke(new BasicStroke(2));
+                g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+            }
+        };
+        content.setBorder(BorderFactory.createEmptyBorder(20, 24, 16, 24));
+
+        JLabel titleLabel = new JLabel("RACE RESULTS", SwingConstants.CENTER);
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+        titleLabel.setForeground(new Color(255, 235, 205));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        JTextPane textPane = createDialogTextPane(
+                resultText,
+                new Font(Font.SANS_SERIF, Font.PLAIN, 16),
+                new Color(255, 235, 205),
+                true
+        );
+
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
+        center.add(titleLabel);
+        center.add(Box.createVerticalStrut(10));
+        center.add(textPane);
+
+        JButton okButton = createDialogButton("CONTINUE", new Color(34, 139, 34));
+        okButton.addActionListener(e -> dialog.dispose());
+
+        JPanel bottom = new JPanel();
+        bottom.setOpaque(false);
+        bottom.add(okButton);
+
+        content.add(center, BorderLayout.CENTER);
+        content.add(bottom, BorderLayout.SOUTH);
+
+        dialog.setContentPane(content);
+        dialog.pack();
+        dialog.setSize(new Dimension(460, 360));
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+
 
     // Hitung tinggi lane berdasarkan tinggi panel secara dinamis
     private int getLaneHeight() {
@@ -584,5 +691,131 @@ public class RacePanel extends JPanel {
     private int getLaneTop(int laneIndex) {
         return getLaneHeight() * laneIndex;
     }
+
+    // Helper JTextPane untuk dialog (warna krem + center)
+    private JTextPane createDialogTextPane(String text, Font font, Color color, boolean center) {
+        JTextPane pane = new JTextPane();
+        pane.setEditable(false);
+        pane.setFocusable(false);
+        pane.setOpaque(false);
+    
+        pane.setFont(font);
+        pane.setText(text);
+    
+        StyledDocument doc = pane.getStyledDocument();
+        SimpleAttributeSet attrs = new SimpleAttributeSet();
+    
+        StyleConstants.setAlignment(attrs,
+                center ? StyleConstants.ALIGN_CENTER : StyleConstants.ALIGN_LEFT);
+        StyleConstants.setForeground(attrs, color);
+        StyleConstants.setFontFamily(attrs, font.getFamily());
+        StyleConstants.setFontSize(attrs, font.getSize());
+    
+        doc.setParagraphAttributes(0, doc.getLength(), attrs, true);
+    
+        pane.setAlignmentX(Component.CENTER_ALIGNMENT);
+        return pane;
+    }
+    
+    // Tombol untuk dialog kecil (OK / CONTINUE)
+    private JButton createDialogButton(String text, Color bgColor) {
+        JButton button = new JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+    
+                Color base = bgColor;
+                if (!isEnabled()) {
+                    base = base.darker();
+                } else if (getModel().isPressed()) {
+                    base = base.darker();
+                } else if (getModel().isRollover()) {
+                    base = base.brighter();
+                }
+    
+                g2d.setColor(base);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
+    
+                g2d.setColor(Color.WHITE);
+                g2d.setFont(getFont());
+                FontMetrics fm = g2d.getFontMetrics();
+                int x = (getWidth() - fm.stringWidth(getText())) / 2;
+                int y = ((getHeight() - fm.getHeight()) / 2) + fm.getAscent();
+                g2d.drawString(getText(), x, y);
+            }
+        };
+        button.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(false);
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
+        button.setPreferredSize(new Dimension(150, 40));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return button;
+    }
+    
+    // Dialog info 1 tombol (OK / CONTINUE) dengan style coklat-krem
+    private void showStyledInfoDialog(String title, String message, String buttonText) {
+        JDialog dialog = new JDialog(
+                SwingUtilities.getWindowAncestor(this),
+                title,
+                Dialog.ModalityType.APPLICATION_MODAL
+        );
+        dialog.setUndecorated(true);
+    
+        JPanel content = new JPanel(new BorderLayout(0, 12)) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+    
+                Color brown = new Color(92, 57, 28);
+                g2d.setColor(brown);
+                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
+    
+                g2d.setColor(brown.darker());
+                g2d.setStroke(new BasicStroke(2));
+                g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
+            }
+        };
+        content.setBorder(BorderFactory.createEmptyBorder(20, 24, 16, 24));
+    
+        JLabel titleLabel = new JLabel(title.toUpperCase(), SwingConstants.CENTER);
+        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+        titleLabel.setForeground(new Color(255, 235, 205));
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+    
+        JTextPane textPane = createDialogTextPane(
+                message,
+                new Font(Font.SANS_SERIF, Font.PLAIN, 16),
+                new Color(255, 235, 205),
+                true
+        );
+    
+        JPanel center = new JPanel();
+        center.setOpaque(false);
+        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
+        center.add(titleLabel);
+        center.add(Box.createVerticalStrut(10));
+        center.add(textPane);
+    
+        JButton okButton = createDialogButton(buttonText, new Color(34, 139, 34));
+        okButton.addActionListener(e -> dialog.dispose());
+    
+        JPanel bottom = new JPanel();
+        bottom.setOpaque(false);
+        bottom.add(okButton);
+    
+        content.add(center, BorderLayout.CENTER);
+        content.add(bottom, BorderLayout.SOUTH);
+    
+        dialog.setContentPane(content);
+        dialog.pack();
+        dialog.setSize(new Dimension(440, 220));
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+    }
+    
 
 }
