@@ -69,6 +69,9 @@ public class HistoryPanel extends JPanel implements Displayable {
         styleHistoryTable();
 
         JScrollPane scrollPane = new JScrollPane(historyTable);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setWheelScrollingEnabled(false);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(new Color(247, 241, 231));
 
