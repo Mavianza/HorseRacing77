@@ -260,60 +260,64 @@ public class RacePanel extends JPanel {
     private void createHorseLabels() {
         clearHorseLabels();
         
-        if (!useAnimatedGif || horses.isEmpty()) return;
-        
-        if (!HorseAssets.hasPreRenderedFrames()) {
-            System.err.println("No pre-rendered frames available!");
-            useAnimatedGif = false;
-            return;
-        }
-        
+        //Langsung ambil dimensi frame
         Dimension frameDim = HorseAssets.getPreRenderedDimensions();
         int frameWidth = frameDim.width;
         int frameHeight = frameDim.height;
         
-        System.out.println("Creating horse labels with frame size: " + frameWidth + "x" + frameHeight);
-        
+        //pembuatan label
         for (int i = 0; i < horses.size(); i++) {
             RaceHorse horse = horses.get(i);
             int laneNumber = laneMappings.get(i);
-            
+
             BufferedImage firstFrame = HorseAssets.getPreRenderedFrame(0);
-            if (firstFrame == null) {
-                System.err.println("Failed to get first frame for horse " + i);
-                continue;
-            }
             
             JLabel horseLabel = new JLabel(new ImageIcon(firstFrame));
             horseLabel.setOpaque(false);
             
+            //hitung posisi kuda
             int x = TRACK_START_X + horse.getPosition();
             int laneY = getLaneTop(laneNumber);
             int laneHeight = getLaneHeight();
             int horseY = laneY + (laneHeight - frameHeight) / 2;
+            
             horseLabel.setBounds(x, horseY, frameWidth, frameHeight);
             
             horseLabels.add(horseLabel);
             trackLayeredPane.add(horseLabel, JLayeredPane.PALETTE_LAYER);
-            
-            String labelText = horse.isPlayer() ? horse.getName() + " ★" : horse.getName();
+
+            String labelText = horse.isPlayer() ? horse.getName() + " (YOU)" : horse.getName();
             JLabel nameLabel = new JLabel(labelText);
-            nameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
-            nameLabel.setForeground(horse.isPlayer() ? new Color(180, 120, 0) : Color.BLACK);
-            nameLabel.setOpaque(true);
-            nameLabel.setBackground(new Color(255, 255, 255, 200));
-            nameLabel.setBorder(BorderFactory.createEmptyBorder(1, 4, 1, 4));
+            nameLabel.setOpaque(true); 
             
+            if (horse.isPlayer()) {
+                nameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 13));
+                nameLabel.setForeground(Color.RED);
+                nameLabel.setBackground(Color.WHITE);
+                nameLabel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(Color.RED, 2),
+                    BorderFactory.createEmptyBorder(2, 5, 2, 5)
+                ));
+            } else {
+                nameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+                nameLabel.setForeground(Color.BLACK);
+                nameLabel.setBackground(new Color(255, 255, 255, 200));
+                nameLabel.setBorder(BorderFactory.createEmptyBorder(1, 4, 1, 4));
+            }
+            
+            //hitung posisi nama
             int nameWidth = nameLabel.getPreferredSize().width;
             int nameHeight = nameLabel.getPreferredSize().height;
             int nameX = x + (frameWidth - nameWidth) / 2;
             int nameY = laneY + 5;
+            
             nameLabel.setBounds(nameX, nameY, nameWidth, nameHeight);
             
             nameLabels.add(nameLabel);
             trackLayeredPane.add(nameLabel, JLayeredPane.MODAL_LAYER);
         }
         
+        //refresh
         trackLayeredPane.revalidate();
         trackLayeredPane.repaint();
     }
@@ -511,16 +515,14 @@ public class RacePanel extends JPanel {
             });
         }).start();
     }
-    
-    // Tampilkan hasil balapan dengan dialog bergaya cokelat–krem
-    // Susun teks hasil balapan lalu tampilkan dialog
-    // Susun teks hasil balapan + info posisi & reward, lalu tampilkan dialog
+
+    //susun teks hasil balapan
     private void showRaceResults() {
         User currentUser = gameFrame.getCurrentUser();
         int playerPosition = -1;
         RaceHorse playerHorse = null;
     
-        // cari posisi player di finishOrder
+        //cari posisi player di finishOrder
         synchronized (finishOrder) {
             for (int i = 0; i < finishOrder.size(); i++) {
                 RaceHorse h = finishOrder.get(i);
@@ -532,7 +534,7 @@ public class RacePanel extends JPanel {
             }
         }
     
-        // hitung coins (pakai skema LAMA: 100/50/25/0)
+        //hitung coins
         int coinsEarned = 0;
         if (playerPosition == 1) {
             coinsEarned = 100;
@@ -542,12 +544,12 @@ public class RacePanel extends JPanel {
             coinsEarned = 25;
         }
     
-        // update koin player + simpan ke DB
+        //update koin player + simpan ke DB
         if (currentUser != null) {
             currentUser.addCoins(coinsEarned);
             userManager.updateUser(currentUser);
     
-            // simpan history balapan
+            //simpan history balapan
             RaceHistory history = new RaceHistory(
                     currentUser.getUserId(),
                     currentUser.getHorse().getName(),
@@ -557,14 +559,12 @@ public class RacePanel extends JPanel {
             );
             userManager.addRaceHistory(history);
         }
-    
-        // ==== susun teks hasil utk dialog coklat–krem ====
+
         StringBuilder sb = new StringBuilder();
     
         if (finishOrder.isEmpty()) {
             sb.append("No race results available.");
         } else {
-            // header: posisi + coins
             if (playerHorse != null) {
                 sb.append("You finished ")
                   .append(getRankingSuffix(playerPosition))
@@ -573,7 +573,6 @@ public class RacePanel extends JPanel {
                   .append("\n\n");
             }
     
-            // pesan kecil seperti versi lama
             if (playerPosition == 1) {
                 sb.append("🏆 CONGRATULATIONS! YOU WON! 🏆\n\n");
             } else if (playerPosition > 0 && playerPosition <= 3) {
@@ -584,7 +583,7 @@ public class RacePanel extends JPanel {
                 sb.append("Keep practicing!\n\n");
             }
     
-            // daftar lengkap hasil
+            //daftar lengkap hasil
             for (int i = 0; i < finishOrder.size(); i++) {
                 RaceHorse h = finishOrder.get(i);
                 String rank = getRankingSuffix(i + 1);
@@ -603,16 +602,12 @@ public class RacePanel extends JPanel {
             }
         }
     
-        // tampilkan di dialog styled
         showRaceResultsDialog(sb.toString());
     
-        // refresh main menu (label coins dll)
+        //refresh main menu (label coins dll)
         gameFrame.updateMainMenu();
     }
-    
 
-
-    // Dialog hasil balapan dengan style cokelat–krem
     private void showRaceResultsDialog(String resultText) {
         JDialog dialog = new JDialog(
                 SwingUtilities.getWindowAncestor(this),
@@ -674,8 +669,6 @@ public class RacePanel extends JPanel {
         dialog.setVisible(true);
     }
 
-
-    // Hitung tinggi lane berdasarkan tinggi panel secara dinamis
     private int getLaneHeight() {
         int h = trackBackgroundPanel.getHeight();
         if (h <= 0) {
@@ -685,12 +678,12 @@ public class RacePanel extends JPanel {
         return h / NUM_COMPETITORS;
     }
 
-    // Posisi Y (top) dari lane ke-`laneIndex`
+    //posisi Y (top) dari lane ke-`laneIndex`
     private int getLaneTop(int laneIndex) {
         return getLaneHeight() * laneIndex;
     }
 
-    // Helper JTextPane untuk dialog (warna krem + center)
+    //helper JTextPane untuk dialog
     private JTextPane createDialogTextPane(String text, Font font, Color color, boolean center) {
         JTextPane pane = new JTextPane();
         pane.setEditable(false);
@@ -714,8 +707,7 @@ public class RacePanel extends JPanel {
         pane.setAlignmentX(Component.CENTER_ALIGNMENT);
         return pane;
     }
-    
-    // Tombol untuk dialog kecil (OK / CONTINUE)
+
     private JButton createDialogButton(String text, Color bgColor) {
         JButton button = new JButton(text) {
             @Override
@@ -752,68 +744,4 @@ public class RacePanel extends JPanel {
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         return button;
     }
-    
-    // Dialog info 1 tombol (OK / CONTINUE) dengan style coklat-krem
-    private void showStyledInfoDialog(String title, String message, String buttonText) {
-        JDialog dialog = new JDialog(
-                SwingUtilities.getWindowAncestor(this),
-                title,
-                Dialog.ModalityType.APPLICATION_MODAL
-        );
-        dialog.setUndecorated(true);
-    
-        JPanel content = new JPanel(new BorderLayout(0, 12)) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-    
-                Color brown = new Color(92, 57, 28);
-                g2d.setColor(brown);
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 18, 18);
-    
-                g2d.setColor(brown.darker());
-                g2d.setStroke(new BasicStroke(2));
-                g2d.drawRoundRect(1, 1, getWidth() - 3, getHeight() - 3, 16, 16);
-            }
-        };
-        content.setBorder(BorderFactory.createEmptyBorder(20, 24, 16, 24));
-    
-        JLabel titleLabel = new JLabel(title.toUpperCase(), SwingConstants.CENTER);
-        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
-        titleLabel.setForeground(new Color(255, 235, 205));
-        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-    
-        JTextPane textPane = createDialogTextPane(
-                message,
-                new Font(Font.SANS_SERIF, Font.PLAIN, 16),
-                new Color(255, 235, 205),
-                true
-        );
-    
-        JPanel center = new JPanel();
-        center.setOpaque(false);
-        center.setLayout(new BoxLayout(center, BoxLayout.Y_AXIS));
-        center.add(titleLabel);
-        center.add(Box.createVerticalStrut(10));
-        center.add(textPane);
-    
-        JButton okButton = createDialogButton(buttonText, new Color(34, 139, 34));
-        okButton.addActionListener(e -> dialog.dispose());
-    
-        JPanel bottom = new JPanel();
-        bottom.setOpaque(false);
-        bottom.add(okButton);
-    
-        content.add(center, BorderLayout.CENTER);
-        content.add(bottom, BorderLayout.SOUTH);
-    
-        dialog.setContentPane(content);
-        dialog.pack();
-        dialog.setSize(new Dimension(440, 220));
-        dialog.setLocationRelativeTo(this);
-        dialog.setVisible(true);
-    }
-    
-
 }

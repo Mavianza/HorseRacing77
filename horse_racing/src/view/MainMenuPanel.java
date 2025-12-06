@@ -18,8 +18,6 @@ public class MainMenuPanel extends JPanel implements Displayable {
     private JLabel coinsLabel;
     private BufferedImage backgroundImage;
     private static final Font DIALOG_FONT = new Font(Font.SANS_SERIF, Font.PLAIN, 15);
-    private static final Color DIALOG_BG = new Color(36, 26, 18);
-    private static final Color ACCENT_COLOR = new Color(255, 215, 0);
     
     public MainMenuPanel(GameFrame gameFrame) {
         this.gameFrame = gameFrame;

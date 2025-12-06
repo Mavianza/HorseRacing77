@@ -1,13 +1,12 @@
 package view;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import utils.UserManager;
+import javax.swing.*;
 import model.User;
+import utils.UserManager;
 
 public class LoginPanel extends JPanel {
     private JTextField usernameField;

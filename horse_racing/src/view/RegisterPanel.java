@@ -1,11 +1,10 @@
 package view;
 
-import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.*;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
+import javax.swing.*;
 import utils.UserManager;
 
 public class RegisterPanel extends JPanel {
