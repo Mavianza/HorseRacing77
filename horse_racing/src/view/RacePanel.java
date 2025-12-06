@@ -33,9 +33,7 @@ public class RacePanel extends JPanel {
     private static final int TRACK_START_X = 100;
     private static final int RACE_UPDATE_DELAY_MS = 30;
     private static final int ANIMATION_DELAY_MS = 80;
-    
-    private int trackLength = 600;
-    
+    private int trackLength;
     private List<RaceHorse> horses;
     private List<Thread> raceThreads;
     private List<Integer> laneMappings;
@@ -43,8 +41,8 @@ public class RacePanel extends JPanel {
     private List<JLabel> nameLabels;
     private JLayeredPane trackLayeredPane;
     private JPanel trackBackgroundPanel;
-    private JPanel resultPanel;  // Panel untuk hasil finish
-    private JLabel[] resultLabels;  // Label untuk setiap posisi
+    private JPanel resultPanel;  
+    private JLabel[] resultLabels;  
     private JButton startButton;
     private JButton backButton;
     private boolean raceInProgress;
@@ -76,7 +74,7 @@ public class RacePanel extends JPanel {
             System.out.println("Track image loaded successfully.");
         } catch (IOException e) {
             System.err.println("Failed to load track image, fallback to manual drawTrack: " + e.getMessage());
-            trackImage = null; // supaya nanti bisa pakai drawTrack() sebagai fallback
+            trackImage = null; 
         }
             if (useAnimatedGif) {
             System.out.println("Initializing pre-rendered frames...");
@@ -115,7 +113,7 @@ public class RacePanel extends JPanel {
                     Graphics2D g2d = (Graphics2D) g;
                     g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                                         RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                    // gambar track sebagai background, di-scale mengikuti ukuran panel
+                    //gambar track sebagai background, di-scale mengikuti ukuran panel
                     g2d.drawImage(trackImage, 0, 0, getWidth(), getHeight(), null);
                 }
             }
