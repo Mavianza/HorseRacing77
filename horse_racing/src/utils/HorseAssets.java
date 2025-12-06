@@ -326,44 +326,4 @@ public class HorseAssets {
         return image;
     }
     
-    public static BufferedImage createFinishLineImage(int width, int height) {
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = image.createGraphics();
-        
-        int squareSize = 20;
-        for (int y = 0; y < height; y += squareSize) {
-            for (int x = 0; x < width; x += squareSize) {
-                if ((x / squareSize + y / squareSize) % 2 == 0) {
-                    g2d.setColor(Color.BLACK);
-                } else {
-                    g2d.setColor(Color.WHITE);
-                }
-                g2d.fillRect(x, y, squareSize, squareSize);
-            }
-        }
-        
-        g2d.dispose();
-        return image;
-    }
-    
-    public static BufferedImage createTrophyImage(int width, int height) {
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = image.createGraphics();
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        
-        g2d.setColor(new Color(255, 215, 0));
-        int[] xPoints = {width/4, width*3/4, width*2/3, width/3};
-        int[] yPoints = {height/3, height/3, height*2/3, height*2/3};
-        g2d.fillPolygon(xPoints, yPoints, 4);
-        
-        g2d.fillRect(width/3, height*2/3, width/3, height/6);
-        g2d.fillRect(width/4, height*5/6, width/2, height/12);
-        
-        g2d.setStroke(new BasicStroke(3));
-        g2d.drawArc(5, height/3, width/5, height/4, 90, 180);
-        g2d.drawArc(width*3/4, height/3, width/5, height/4, -90, 180);
-        
-        g2d.dispose();
-        return image;
-    }
 }
